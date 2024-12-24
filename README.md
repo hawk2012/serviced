@@ -1,6 +1,4 @@
 # serviced
-Script for service creation. Written by me in Python.
-
 The script is designed to create Systemd service files based on the parameters entered by the user. It requests the following data from the user:
 * The name of the service (for example, my_service)
 * The command to start the service (for example, /path/to/my_script.sh )
