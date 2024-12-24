@@ -7,7 +7,7 @@ The script is designed to create Systemd service files based on the parameters e
 * The user (the user under which the command will run)
 * The working directory (the directory where the command will be run)
 
-Based on this data, the script creates a .service file in the /etc/systemd/system/ directory, which can then be used to manage the service through Systemd. The script also displays messages about the progress and successful creation of the service.
+Based on this data, the script creates a `.service` file in the `/etc/systemd/system/` directory, which can then be used to manage the service through Systemd. The script also displays messages about the progress and successful creation of the service.
 
 Thus, this tool simplifies the creation of new service files for Systemd, allowing you to quickly configure the automatic launch of applications or scripts when the system boots.
 
