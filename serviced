@@ -1,0 +1,53 @@
+import os
+
+def main():
+    # Запрашиваем имя сервиса у пользователя
+    service_name = input("Введите имя сервиса на английском: ")
+    
+    # Проверяем наличие каталога systemd
+    if not os.path.exists("/etc/systemd/system"):
+        print("Каталог /etc/systemd/system не найден.")
+        return
+    
+    # Путь к файлу сервиса
+    service_file_path = f"/etc/systemd/system/{service_name}.service"
+    
+    # Создаем файл сервиса
+    with open(service_file_path, 'w') as service_file:
+        print(f"Создание файла {service_file_path}...")
+        
+        # Запрашиваем параметры сервиса у пользователя
+        command = input("Введите команду для запуска сервиса: ")
+        description = input("Введите описание сервиса: ")
+        group = input("Введите группу процесса: ")
+        user = input("Введите пользователя: ")
+        working_directory = input("Введите рабочую директорию: ")
+        
+        # Формируем содержимое файла .service
+        service_content = f"""
+[Unit]
+Description={description}
+
+[Service]
+Type=simple
+ExecStart={command}
+User={user}
+Group={group}
+WorkingDirectory={working_directory}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+"""
+        
+        # Записываем содержимое в файл
+        service_file.write(service_content)
+    
+    # Сообщаем о завершении создания сервиса
+    print(f"Сервис {service_name} успешно создан.")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"Произошла ошибка при выполнении скрипта: {e}")
