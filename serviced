@@ -1,31 +1,28 @@
 import os
+import getpass
 
-def main():
-    # Запрашиваем имя сервиса у пользователя
-    service_name = input("Введите имя сервиса на английском: ")
-    
-    # Проверяем наличие каталога systemd
-    if not os.path.exists("/etc/systemd/system"):
-        print("Каталог /etc/systemd/system не найден.")
-        return
-    
-    # Путь к файлу сервиса
-    service_file_path = f"/etc/systemd/system/{service_name}.service"
-    
-    # Создаем файл сервиса
-    with open(service_file_path, 'w') as service_file:
-        print(f"Создание файла {service_file_path}...")
-        
-        # Запрашиваем параметры сервиса у пользователя
-        command = input("Введите команду для запуска сервиса: ")
-        description = input("Введите описание сервиса: ")
-        group = input("Введите группу процесса: ")
-        user = input("Введите пользователя: ")
-        working_directory = input("Введите рабочую директорию: ")
-        
-        # Формируем содержимое файла .service
-        service_content = f"""
-[Unit]
+
+def check_root():
+    """Проверяет, запущен ли скрипт от root."""
+    if os.geteuid() != 0:
+        print("Ошибка: Скрипт должен быть запущен с правами root.")
+        exit(1)
+
+
+def get_user_input(prompt, default=None):
+    """Запрашивает ввод у пользователя с возможностью установки значения по умолчанию."""
+    if default:
+        prompt = f"{prompt} (по умолчанию: {default}): "
+    else:
+        prompt = f"{prompt}: "
+
+    user_input = input(prompt).strip()
+    return user_input if user_input else default
+
+
+def create_service_file(service_name, description, command, user, group, working_directory):
+    """Создаёт .service файл в каталоге systemd."""
+    service_content = f"""[Unit]
 Description={description}
 
 [Service]
@@ -39,15 +36,65 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 """
-        
-        # Записываем содержимое в файл
-        service_file.write(service_content)
-    
-    # Сообщаем о завершении создания сервиса
-    print(f"Сервис {service_name} успешно создан.")
+
+    service_path = f"/etc/systemd/system/{service_name}.service"
+
+    try:
+        with open(service_path, 'w') as f:
+            f.write(service_content)
+        print(f"✅ Файл сервиса создан: {service_path}")
+        return True
+    except Exception as e:
+        print(f"❌ Ошибка при записи файла: {e}")
+        return False
+
+
+def main():
+    print("🔧 Создание systemd-сервиса\n")
+
+    # Проверка на root
+    check_root()
+
+    # Путь к каталогу systemd
+    systemd_dir = "/etc/systemd/system"
+    if not os.path.exists(systemd_dir):
+        print(f"❌ Каталог {systemd_dir} не найден.")
+        return
+
+    # Получаем данные от пользователя
+    service_name = get_user_input("Введите имя сервиса (на английском)")
+    description = get_user_input("Введите описание сервиса", default=f"My {service_name} Service")
+    command = get_user_input("Введите команду для запуска сервиса", default="/usr/bin/python3 /home/user/my_script.py")
+    user = get_user_input("Введите имя пользователя", default=getpass.getuser())
+    group = get_user_input("Введите группу", default="www-data")
+    working_directory = get_user_input("Введите рабочую директорию", default=f"/home/{user}")
+
+    # Вывод предварительной информации
+    print("\n📄 Предварительный просмотр конфигурации сервиса:")
+    print(f"Имя сервиса: {service_name}")
+    print(f"Описание: {description}")
+    print(f"Команда: {command}")
+    print(f"Пользователь: {user}")
+    print(f"Группа: {group}")
+    print(f"Рабочая директория: {working_directory}\n")
+
+    confirm = input("Подтвердите создание сервиса (y/n): ").lower()
+    if confirm != "y":
+        print("❌ Сервис не создан.")
+        return
+
+    # Создание файла
+    if create_service_file(service_name, description, command, user, group, working_directory):
+        print("\n🔄 Не забудьте выполнить следующие команды в терминале:")
+        print(f"sudo systemctl daemon-reload")
+        print(f"sudo systemctl enable {service_name}")
+        print(f"sudo systemctl start {service_name}")
+
 
 if __name__ == "__main__":
     try:
         main()
+    except KeyboardInterrupt:
+        print("\n❌ Прервано пользователем.")
     except Exception as e:
-        print(f"Произошла ошибка при выполнении скрипта: {e}")
+        print(f"❌ Произошла ошибка: {e}")
